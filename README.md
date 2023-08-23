@@ -4,7 +4,13 @@
 [![Dependency Status](https://deps.rs/repo/github/tokio-rs/prost/status.svg)](https://deps.rs/repo/github/tokio-rs/prost)
 [![Discord](https://img.shields.io/discord/500028886025895936)](https://discord.gg/tokio)
 
-# *PROST!*
+# PATCH
+
+This repo is a slightly modified version of PROST from upstream. Specifically, it aims to achieve compatibility with `ts-proto` on how repeated, packed, varint arrays are serialized.
+
+Specifically, it modifies the `encode_packed` method of `varint` types to encode the tag and a zero length in case the array is empty.
+
+# _PROST!_
 
 `prost` is a [Protocol Buffers](https://developers.google.com/protocol-buffers/)
 implementation for the [Rust Language](https://www.rust-lang.org/). `prost`
@@ -12,17 +18,17 @@ generates simple, idiomatic Rust code from `proto2` and `proto3` files.
 
 Compared to other Protocol Buffers implementations, `prost`
 
-* Generates simple, idiomatic, and readable Rust types by taking advantage of
+- Generates simple, idiomatic, and readable Rust types by taking advantage of
   Rust `derive` attributes.
-* Retains comments from `.proto` files in generated Rust code.
-* Allows existing Rust types (not generated from a `.proto`) to be serialized
+- Retains comments from `.proto` files in generated Rust code.
+- Allows existing Rust types (not generated from a `.proto`) to be serialized
   and deserialized by adding attributes.
-* Uses the [`bytes::{Buf, BufMut}`](https://github.com/carllerche/bytes)
+- Uses the [`bytes::{Buf, BufMut}`](https://github.com/carllerche/bytes)
   abstractions for serialization instead of `std::io::{Read, Write}`.
-* Respects the Protobuf `package` specifier when organizing generated code
+- Respects the Protobuf `package` specifier when organizing generated code
   into Rust modules.
-* Preserves unknown enum values during deserialization.
-* Does not include support for runtime reflection or message descriptors.
+- Preserves unknown enum values during deserialization.
+- Does not include support for runtime reflection or message descriptors.
 
 ## Using `prost` in a Cargo Project
 
@@ -63,7 +69,6 @@ bundled a `protoc` or attempt to compile `protoc` for users. For install
 instructions for `protoc` please check out the [protobuf install] instructions.
 
 [protobuf install]: https://github.com/protocolbuffers/protobuf#protocol-compiler-installation
-
 
 ### Packages
 
@@ -108,22 +113,22 @@ corresponding type.
 Scalar value types are converted as follows:
 
 | Protobuf Type | Rust Type |
-| --- | --- |
-| `double` | `f64` |
-| `float` | `f32` |
-| `int32` | `i32` |
-| `int64` | `i64` |
-| `uint32` | `u32` |
-| `uint64` | `u64` |
-| `sint32` | `i32` |
-| `sint64` | `i64` |
-| `fixed32` | `u32` |
-| `fixed64` | `u64` |
-| `sfixed32` | `i32` |
-| `sfixed64` | `i64` |
-| `bool` | `bool` |
-| `string` | `String` |
-| `bytes` | `Vec<u8>` |
+| ------------- | --------- |
+| `double`      | `f64`     |
+| `float`       | `f32`     |
+| `int32`       | `i32`     |
+| `int64`       | `i64`     |
+| `uint32`      | `u32`     |
+| `uint64`      | `u64`     |
+| `sint32`      | `i32`     |
+| `sint64`      | `i64`     |
+| `fixed32`     | `u32`     |
+| `fixed64`     | `u64`     |
+| `sfixed32`    | `i32`     |
+| `sfixed64`    | `i64`     |
+| `bool`        | `bool`    |
+| `string`      | `String`  |
+| `bytes`       | `Vec<u8>` |
 
 #### Enumerations
 
@@ -222,13 +227,13 @@ Protobuf scalar value and enumeration message fields can have a modifier
 depending on the Protobuf version. Modifiers change the corresponding type of
 the Rust field:
 
-| `.proto` Version | Modifier | Rust Type |
-| --- | --- | --- |
-| `proto2` | `optional` | `Option<T>` |
-| `proto2` | `required` | `T` |
-| `proto3` | default | `T` for scalar types, `Option<T>` otherwise |
-| `proto3` | `optional` | `Option<T>` |
-| `proto2`/`proto3` | `repeated` | `Vec<T>` |
+| `.proto` Version  | Modifier   | Rust Type                                   |
+| ----------------- | ---------- | ------------------------------------------- |
+| `proto2`          | `optional` | `Option<T>`                                 |
+| `proto2`          | `required` | `T`                                         |
+| `proto3`          | default    | `T` for scalar types, `Option<T>` otherwise |
+| `proto3`          | `optional` | `Option<T>`                                 |
+| `proto2`/`proto3` | `repeated` | `Vec<T>`                                    |
 
 Note that in `proto3` the default representation for all user-defined message
 types is `Option<T>`, and for scalar types just `T` (during decoding, a missing
@@ -460,35 +465,34 @@ The prost project maintains flakes support for local development. Once you have
 nix and nix flakes setup you can just run `nix develop` to get a shell
 configured with the required dependencies to compile the whole project.
 
-
 ## FAQ
 
 1. **Could `prost` be implemented as a serializer for [Serde](https://serde.rs/)?**
 
-  Probably not, however I would like to hear from a Serde expert on the matter.
-  There are two complications with trying to serialize Protobuf messages with
-  Serde:
+Probably not, however I would like to hear from a Serde expert on the matter.
+There are two complications with trying to serialize Protobuf messages with
+Serde:
 
-  - Protobuf fields require a numbered tag, and currently there appears to be no
-    mechanism suitable for this in `serde`.
-  - The mapping of Protobuf type to Rust type is not 1-to-1. As a result,
-    trait-based approaches to dispatching don't work very well. Example: six
-    different Protobuf field types correspond to a Rust `Vec<i32>`: `repeated
-    int32`, `repeated sint32`, `repeated sfixed32`, and their packed
-    counterparts.
+- Protobuf fields require a numbered tag, and currently there appears to be no
+  mechanism suitable for this in `serde`.
+- The mapping of Protobuf type to Rust type is not 1-to-1. As a result,
+  trait-based approaches to dispatching don't work very well. Example: six
+  different Protobuf field types correspond to a Rust `Vec<i32>`: `repeated
+int32`, `repeated sint32`, `repeated sfixed32`, and their packed
+  counterparts.
 
-  But it is possible to place `serde` derive tags onto the generated types, so
-  the same structure can support both `prost` and `Serde`.
+But it is possible to place `serde` derive tags onto the generated types, so
+the same structure can support both `prost` and `Serde`.
 
 2. **I get errors when trying to run `cargo test` on MacOS**
 
-  If the errors are about missing `autoreconf` or similar, you can probably fix
-  them by running
+If the errors are about missing `autoreconf` or similar, you can probably fix
+them by running
 
-  ```ignore
-  brew install automake
-  brew install libtool
-  ```
+```ignore
+brew install automake
+brew install libtool
+```
 
 ## License
 

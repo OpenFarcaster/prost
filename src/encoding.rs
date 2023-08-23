@@ -501,7 +501,11 @@ macro_rules! varint {
             encode_repeated!($ty);
 
             pub fn encode_packed<B>(tag: u32, values: &[$ty], buf: &mut B) where B: BufMut {
-                if values.is_empty() { return; }
+                if values.is_empty() {
+                    encode_key(tag, WireType::LengthDelimited, buf);
+                    encode_varint(0 as u64, buf);
+                    return;
+                }
 
                 encode_key(tag, WireType::LengthDelimited, buf);
                 let len: usize = values.iter().map(|$to_uint64_value| {
@@ -531,7 +535,7 @@ macro_rules! varint {
             #[inline]
             pub fn encoded_len_packed(tag: u32, values: &[$ty]) -> usize {
                 if values.is_empty() {
-                    0
+                    key_len(tag) + encoded_len_varint(0 as u64)
                 } else {
                     let len = values.iter()
                                     .map(|$to_uint64_value| encoded_len_varint($to_uint64))
